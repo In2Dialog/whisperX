@@ -244,12 +244,14 @@ class FasterWhisperPipeline(Pipeline):
 
 
     def detect_language(self, audio: np.ndarray, start_time_seconds: int = 60, end_time_seconds: int = 90):
+
         start_sample = start_time_seconds * SAMPLE_RATE
         end_sample = end_time_seconds * SAMPLE_RATE
 
         if audio.shape[0] < end_sample:
             print("Warning: audio does not reach the end time of the specified range, language detection may be inaccurate.")
-            # You could adjust this to handle audio shorter than expected more gracefully
+            start_sample = 0
+            end_sample = 30 * SAMPLE_RATE
         
         # Ensure the slice does not exceed audio length
         segment_end_sample = min(end_sample, audio.shape[0])
