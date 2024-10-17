@@ -259,7 +259,7 @@ class FasterWhisperPipeline(Pipeline):
         segment_end_sample = min(end_sample, audio.shape[0])
         segment_length = segment_end_sample - start_sample
 
-        model_n_mels = self.model.feat_kwargs.get("feature_size")
+        model_n_mels = self.model.feat_kwargs.get("feature_size", 80)
         segment = log_mel_spectrogram(
             audio[start_sample:segment_end_sample],
             n_mels=model_n_mels,
