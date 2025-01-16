@@ -243,28 +243,32 @@ class FasterWhisperPipeline(Pipeline):
         return {"segments": segments, "language": language}
 
 
-    def detect_language(self, audio: np.ndarray, start_time_seconds: int = 60, end_time_seconds: int = 90):
+    def detect_language(self, audio: np.ndarray):
 
-        start_sample = start_time_seconds * SAMPLE_RATE
-        end_sample = end_time_seconds * SAMPLE_RATE
-
+        total_duration_seconds = audio.shape[0] / SAMPLE_RATE
+        midpoint = round(total_duration_seconds / 2)
+        start_sample = int((midpoint - 15) * SAMPLE_RATE)  # 15 seconds before midpoint
+        end_sample = int((midpoint + 15) * SAMPLE_RATE)  # 15 seconds after midpoint
+        # Adjust if the audio is too short or invalid range
         if audio.shape[0] < end_sample:
-            print("Warning: audio does not reach the end time of the specified range, language detection may be inaccurate.")
+            print("Warning: Audio is shorter than expected. Adjusting to use the first 30 seconds.")
             start_sample = 0
-            end_sample = 30 * SAMPLE_RATE
-        
-        # Ensure the slice does not exceed audio length
+            end_sample = min(30 * SAMPLE_RATE, audio.shape[0]) 
+
+        # Ensure the slice does not exceed the audio length
         segment_end_sample = min(end_sample, audio.shape[0])
         segment_length = segment_end_sample - start_sample
 
-        model_n_mels = self.model.feat_kwargs.get("feature_size")
-        segment = log_mel_spectrogram(audio[start_sample:segment_end_sample],
-                                    n_mels=model_n_mels if model_n_mels is not None else 80,
-                                    padding=0 if segment_length >= (end_sample - start_sample) else (end_sample - start_sample) - segment_length)
+        model_n_mels = self.model.feat_kwargs.get("feature_size", 80)
+        segment = log_mel_spectrogram(
+            audio[start_sample:segment_end_sample],
+            n_mels=model_n_mels,
+            padding=0 if segment_length >= (end_sample - start_sample) else (end_sample - start_sample) - segment_length
+        )
         encoder_output = self.model.encode(segment)
         results = self.model.model.detect_language(encoder_output)
         language_token, language_probability = results[0][0]
-        language = language_token[2:-2]
+        language = language_token[2:-2]  # Removing special tokens
         print(f"Detected language: {language} ({language_probability:.2f}) in the specified range...")
         return language
 
@@ -356,7 +360,7 @@ def load_model(whisper_arch,
     if vad_model is not None:
         vad_model = vad_model
     else:
-        vad_model = load_vad_model(torch.device(device), use_auth_token=None, **default_vad_options)
+        vad_model = load_vad_model(torch.device(device), use_auth_token=None)
 
     return FasterWhisperPipeline(
         model=model,
