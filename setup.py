@@ -1,5 +1,4 @@
 import os
-import platform
 
 import pkg_resources
 from setuptools import find_packages, setup
@@ -26,5 +25,8 @@ setup(
         "console_scripts": ["whisperx=whisperx.transcribe:cli"],
     },
     include_package_data=True,
-    extras_require={"dev": ["pytest"]},
+    package_data={
+        "whisperx": ["assets/*"]
+    },
+    extras_require={"dev": ["pytest"]}
 )
