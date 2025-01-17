@@ -19,7 +19,7 @@ from .diarize import Segment as SegmentX
 
 def load_vad_model(device, vad_onset=0.500, vad_offset=0.363, use_auth_token=None, model_fp=None):
     model_dir = torch.hub._get_torch_home()
-    main_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    main_dir = os.path.dirname(os.path.abspath(__file__))
     os.makedirs(model_dir, exist_ok = True)
 
     if model_fp is None:
